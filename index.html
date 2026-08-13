@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Life &amp; Work Planner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='20' y='20' width='60' height='12' rx='3' fill='%23B6594C'/><g fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><circle cx='30' cy='26' r='7'/><circle cx='45' cy='26' r='7'/><circle cx='60' cy='26' r='7'/><circle cx='75' cy='26' r='7'/><path d='M20 30 L20 78 L58 78 L76 60 L76 30 Z'/><path d='M58 78 L58 60 L76 60'/><line x1='28' y1='42' x2='68' y2='42'/><line x1='28' y1='54' x2='68' y2='54'/><line x1='28' y1='66' x2='68' y2='66'/><line x1='36' y1='34' x2='36' y2='78'/><line x1='48' y1='34' x2='48' y2='78'/><line x1='60' y1='34' x2='60' y2='60'/></g></svg>">
+  <style>
+    :root {
+      --bg: #faf9f7;
+      --card-bg: #ffffff;
+      --border: #e5e2dd;
+      --text: #2b2924;
+      --text-muted: #8a8578;
+      --accent: #37514D;
+      --hour-height: 48px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 24px; border-bottom: 1px solid var(--border); background: var(--card-bg);
+    }
+    .topbar h1 { font-size: 19px; margin: 0; }
+    .topbar-actions { display: flex; gap: 8px; }
+
+    .btn {
+      border: 1px solid var(--border); background: var(--card-bg); border-radius: 8px;
+      padding: 7px 13px; font-size: 13px; cursor: pointer; color: var(--text);
+    }
+    .btn:hover { background: #f2f0ec; }
+    .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-danger { color: #c0392b; border-color: #f0c4bd; }
+    .btn-small { padding: 3px 8px; font-size: 11px; border-radius: 6px; }
+
+    main { padding: 18px 24px 60px; }
+
+    .dashboard-top {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 30px;
+    }
+
+    /* ---------- Sidebar ---------- */
+    .sidebar { width: 260px; flex-shrink: 0; display: flex; flex-direction: column; gap: 14px; }
+    .side-box {
+      background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px;
+    }
+    .side-box h3 { margin: 0 0 10px; font-size: 13px; text-transform: uppercase; letter-spacing: .03em; color: var(--text-muted); }
+    .quick-add { display: flex; gap: 6px; margin-bottom: 10px; }
+    .quick-add input {
+      flex: 1; padding: 7px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px;
+    }
+    .note-row { display: flex; align-items: flex-start; gap: 7px; padding: 5px 0; font-size: 13px; }
+    .note-row input[type="checkbox"] { margin-top: 3px; }
+    .note-row .note-text { flex: 1; cursor: pointer; }
+    .note-row.done .note-text { text-decoration: line-through; color: var(--text-muted); }
+    .empty-hint { font-size: 12px; color: var(--text-muted); }
+
+    .rec-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 6px 0; font-size: 12px; border-top: 1px solid var(--border);
+    }
+    .rec-row:first-of-type { border-top: none; }
+    .rec-row .rec-name { font-weight: 600; }
+    .rec-row .rec-meta { color: var(--text-muted); display: block; font-size: 11px; }
+
+    /* ---------- Calendar ---------- */
+    .calendar-area { flex: 1; min-width: 0; background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .week-nav {
+      display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--border);
+    }
+    .week-label { font-weight: 600; font-size: 15px; }
+
+    .cal-header { display: grid; grid-template-columns: 52px repeat(7, 1fr); border-bottom: 1px solid var(--border); }
+    .cal-header .gutter { }
+    .cal-header .day-head { text-align: center; padding: 6px 2px; font-size: 12px; color: var(--text-muted); border-left: 1px solid var(--border); }
+    .cal-header .day-head .day-num { font-size: 15px; font-weight: 700; color: var(--text); }
+    .cal-header .day-head.is-today .day-num { color: var(--accent); }
+
+    .all-day-row { display: grid; grid-template-columns: 52px repeat(7, 1fr); border-bottom: 1px solid var(--border); min-height: 28px; }
+    .all-day-row .gutter { font-size: 10px; color: var(--text-muted); text-align: right; padding: 4px 6px 0 0; }
+    .all-day-cell { border-left: 1px solid var(--border); padding: 3px; display: flex; flex-direction: column; gap: 2px; overflow: hidden; min-width: 0; }
+    .all-day-chip {
+      font-size: 10px; padding: 2px 5px; border-radius: 5px; color: #fff; cursor: pointer;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      min-width: 0; max-width: 100%; box-sizing: border-box;
+    }
+    .all-day-chip.done { text-decoration: line-through; opacity: .6; }
+
+    .cal-scroll { max-height: 480px; overflow-y: auto; position: relative; }
+    .cal-grid { display: grid; grid-template-columns: 52px repeat(7, 1fr); }
+    .time-gutter { display: flex; flex-direction: column; }
+    .time-slot { height: var(--hour-height); font-size: 10px; color: var(--text-muted); text-align: right; padding-right: 6px; transform: translateY(-6px); }
+    .day-col { position: relative; border-left: 1px solid var(--border); }
+    .hour-cell { height: var(--hour-height); border-bottom: 1px solid #f1efeb; cursor: pointer; }
+    .hour-cell:hover { background: #f7f6f3; }
+    .day-col.is-today { background: #fbf8f4; }
+
+    .time-block {
+      position: absolute; left: 2px; right: 2px; border-radius: 6px; padding: 3px 6px;
+      color: #fff; font-size: 11px; overflow: hidden; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+    }
+    .time-block .tb-name { font-weight: 600; }
+    .time-block.done { opacity: .55; text-decoration: line-through; }
+    .time-block .tb-time { font-size: 10px; opacity: .85; }
+
+    .now-line { position: absolute; left: 0; right: 0; height: 2px; background: #e74c3c; z-index: 5; }
+    .now-line::before {
+      content: ''; position: absolute; left: -4px; top: -4px; width: 9px; height: 9px; border-radius: 50%; background: #e74c3c;
+    }
+
+    /* ---------- Projects section ---------- */
+    .section-title { font-size: 15px; font-weight: 700; margin: 0 0 14px; }
+    .projects-board { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+    .project-column { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+    .project-column h3 { margin: 0 0 10px; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+    .project-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .task-card {
+      background: #fff; border-left: 4px solid #999; border-radius: 6px; padding: 7px 9px; margin-bottom: 7px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.06); cursor: pointer; font-size: 13px;
+    }
+    .task-card.done { text-decoration: line-through; color: var(--text-muted); }
+    .task-card .tc-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    /* ---------- Modals ---------- */
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; z-index: 50; }
+    .modal-backdrop.hidden { display: none; }
+    .modal { background: #fff; border-radius: 12px; padding: 20px 24px; width: 400px; max-width: 90vw; max-height: 88vh; overflow-y: auto; }
+    .modal h2 { margin-top: 0; font-size: 16px; }
+    .modal label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }
+    .modal input, .modal select, .modal textarea {
+      display: block; width: 100%; margin-top: 4px; padding: 8px; border: 1px solid var(--border);
+      border-radius: 6px; font-size: 13px; color: var(--text); font-family: inherit;
+    }
+    .modal textarea { resize: vertical; }
+    .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .field-with-clear { display: flex; align-items: center; gap: 4px; margin-top: 4px; }
+    .field-with-clear input { margin-top: 0; flex: 1; }
+    .clear-field-btn {
+      flex-shrink: 0; width: 22px; height: 22px; border: 1px solid var(--border); background: #fff;
+      border-radius: 6px; color: var(--text-muted); cursor: pointer; font-size: 13px; line-height: 1;
+      padding: 0;
+    }
+    .clear-field-btn:hover { background: #f2f0ec; color: var(--text); }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .checkbox-row { display: flex; align-items: center; gap: 8px; }
+    .checkbox-row input { width: auto; margin: 0; }
+    .repeat-box { background: #f7f6f3; border-radius: 8px; padding: 10px 12px; margin: -4px 0 12px; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+    .hidden { display: none !important; }
+    #icsUrl { margin: 10px 0; }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <h1>🗓️ Life &amp; Work Planner</h1>
+    <div class="topbar-actions">
+      <button id="addTaskBtn" class="btn btn-primary">+ New task</button>
+      <button id="appleImportBtn" class="btn">🍏 Import from Apple</button>
+      <button id="icsBtn" class="btn">🍎 Apple Calendar link</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="dashboard-top">
+      <aside class="sidebar">
+        <div class="side-box">
+          <h3 id="todayBoxTitle">Today</h3>
+          <div class="quick-add">
+            <input type="text" id="quickAddInput" placeholder="Quick note or to-do…">
+            <button id="quickAddBtn" class="btn btn-small">Add</button>
+          </div>
+          <div id="todayList"></div>
+        </div>
+        <div class="side-box">
+          <h3>Notes (no date)</h3>
+          <div id="notesList"></div>
+        </div>
+        <div class="side-box">
+          <h3>Recurring</h3>
+          <div id="recurringList"></div>
+        </div>
+      </aside>
+
+      <section class="calendar-area">
+        <div class="week-nav">
+          <button id="prevWeek" class="btn btn-small">←</button>
+          <span id="weekLabel" class="week-label"></span>
+          <button id="thisWeek" class="btn btn-small">Today</button>
+          <button id="nextWeek" class="btn btn-small">→</button>
+        </div>
+        <div class="cal-header" id="calHeader"></div>
+        <div class="all-day-row" id="allDayRow"></div>
+        <div class="cal-scroll" id="calScroll">
+          <div class="cal-grid" id="calGrid"></div>
+        </div>
+      </section>
+    </div>
+
+    <h2 class="section-title">📁 Projects</h2>
+    <div id="projectsBoard" class="projects-board"></div>
+  </main>
+
+  <!-- Task modal -->
+  <div id="taskModal" class="modal-backdrop hidden">
+    <div class="modal">
+      <h2 id="taskModalTitle">New task</h2>
+      <form id="taskForm" novalidate>
+        <input type="hidden" id="taskId">
+        <input type="hidden" id="taskIsTemplate" value="">
+        <label>Name<input type="text" id="taskName" required></label>
+        <label>Project
+          <select id="taskProject"></select>
+        </label>
+        <div class="three-col">
+          <label id="taskShowDateLabel">Date
+            <div class="field-with-clear">
+              <input type="date" id="taskShowDate">
+              <button type="button" class="clear-field-btn" data-clear="taskShowDate" title="Clear date">×</button>
+            </div>
+          </label>
+          <label>Time
+            <div class="field-with-clear">
+              <input type="time" id="taskShowTime">
+              <button type="button" class="clear-field-btn" data-clear="taskShowTime" title="Clear time">×</button>
+            </div>
+          </label>
+          <label>Duration (min)<input type="number" id="taskDuration" min="5" step="5" value="60"></label>
+        </div>
+        <label id="taskDeadlineLabel">Deadline (optional)
+          <div class="field-with-clear">
+            <input type="date" id="taskDeadline">
+            <button type="button" class="clear-field-btn" data-clear="taskDeadline" title="Clear deadline">×</button>
+          </div>
+        </label>
+        <label id="taskStatusLabel">Status
+          <select id="taskStatus">
+            <option>Not started</option>
+            <option>In progress</option>
+            <option>Done</option>
+          </select>
+        </label>
+        <label>Notes
+          <textarea id="taskNotes" rows="3" placeholder="Any details, links, addresses…"></textarea>
+        </label>
+        <label class="checkbox-row" id="repeatToggleRow">
+          <input type="checkbox" id="taskRepeats"> Repeats
+        </label>
+        <div id="repeatBox" class="repeat-box hidden">
+          <label>Frequency
+            <select id="repeatType">
+              <option value="DAILY">Every day</option>
+              <option value="WEEKLY" selected>Every week</option>
+              <option value="EVERY_N_DAYS">Every N days</option>
+              <option value="MONTHLY">Every month</option>
+            </select>
+          </label>
+          <label id="repeatIntervalLabel" class="hidden">Every how many days?
+            <input type="number" id="repeatInterval" min="1" value="2">
+          </label>
+        </div>
+        <label class="checkbox-row">
+          <input type="checkbox" id="taskSync"> Add to Apple Calendar feed
+        </label>
+        <div class="modal-actions">
+          <button type="button" id="deleteTaskBtn" class="btn btn-danger hidden">Delete</button>
+          <button type="button" id="cancelTaskBtn" class="btn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ICS link modal -->
+  <div id="icsModal" class="modal-backdrop hidden">
+    <div class="modal">
+      <h2>🍎 Apple Calendar feed</h2>
+      <p>Subscribe to this link in Apple Calendar (File → New Calendar Subscription on Mac, or Settings → Calendar → Add Subscribed Calendar on iPhone). It updates live, every time you open it — no waiting for a refresh.</p>
+      <input type="text" id="icsUrl" readonly>
+      <div class="modal-actions">
+        <button type="button" id="copyIcsBtn" class="btn btn-primary">Copy link</button>
+        <button type="button" id="closeIcsBtn" class="btn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Paste your deployed Apps Script Web app URL here (Deploy > Manage
+    // deployments > copy the URL ending in /exec). Access must be set to
+    // "Anyone" since this page is hosted on a different origin (GitHub
+    // Pages) than the API.
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxWEuxXc8E3JhMe1OmkyKEtVCfETlJbZDDBJZZHL9rnC9_YQhi7kZfq_Oxh2MQ1_LVHkg/exec';
+
+    const HOUR_HEIGHT = 48;
+    let APP_DATA = { tasks: [], templates: [], projects: [] };
+    let currentWeekStart = startOfWeek(new Date());
+
+    document.addEventListener('DOMContentLoaded', () => {
+      buildCalendarSkeleton();
+      bindNav();
+      bindModals();
+      bindSidebar();
+      loadData();
+    });
+
+    // Calls a backend action by name. Uses text/plain as the request
+    // content-type on purpose — that keeps this a CORS "simple request"
+    // (no preflight OPTIONS call), which Apps Script web apps don't handle.
+    function apiCall(action, args) {
+      return fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: action, args: args || [] })
+      })
+        .then(r => r.json())
+        .then(res => {
+          if (!res.success) throw new Error(res.error || 'Unknown error');
+          return res.data;
+        });
+    }
+
+    function loadData() {
+      apiCall('getAppData').then(data => {
+        APP_DATA = data;
+        populateProjectSelects();
+        renderAll();
+      }).catch(showError);
+    }
+
+    function renderAll() {
+      renderCalendar();
+      renderSidebar();
+      renderProjectsBoard();
+    }
+
+    function showError(err) {
+      alert('Something went wrong: ' + (err && err.message ? err.message : err));
+    }
+
+    // ---------- Date helpers ----------
+
+    function startOfWeek(d) {
+      const date = new Date(d);
+      const day = date.getDay();
+      const diff = day === 0 ? -6 : 1 - day;
+      date.setDate(date.getDate() + diff);
+      date.setHours(0, 0, 0, 0);
+      return date;
+    }
+    function fmt(d) {
+      const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0');
+      return y + '-' + m + '-' + day;
+    }
+    function sameDay(a, b) { return fmt(a) === fmt(b); }
+    function minutesFromTime(t) {
+      if (!t) return null;
+      const [h, m] = t.split(':').map(Number);
+      return h * 60 + m;
+    }
+    function textColorFor(bgHex) {
+      const c = bgHex.replace('#', '');
+      const r = parseInt(c.substr(0, 2), 16), g = parseInt(c.substr(2, 2), 16), b = parseInt(c.substr(4, 2), 16);
+      const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+      return luminance > 0.6 ? '#2b2924' : '#ffffff';
+    }
+
+    // ---------- Nav ----------
+
+    function bindNav() {
+      document.getElementById('prevWeek').addEventListener('click', () => { currentWeekStart.setDate(currentWeekStart.getDate() - 7); renderCalendar(); });
+      document.getElementById('nextWeek').addEventListener('click', () => { currentWeekStart.setDate(currentWeekStart.getDate() + 7); renderCalendar(); });
+      document.getElementById('thisWeek').addEventListener('click', () => { currentWeekStart = startOfWeek(new Date()); renderCalendar(); });
+    }
+
+    // ---------- Project helpers ----------
+
+    function projectColor(name) {
+      const p = APP_DATA.projects.find(p => p.name === name);
+      return p ? p.color : '#999999';
+    }
+    function populateProjectSelects() {
+      const sel = document.getElementById('taskProject');
+      sel.innerHTML = '';
+      const noneOpt = document.createElement('option');
+      noneOpt.value = ''; noneOpt.textContent = 'No project (calendar event only)';
+      sel.appendChild(noneOpt);
+      APP_DATA.projects.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.name; opt.textContent = p.name;
+        sel.appendChild(opt);
+      });
+    }
+
+    // ---------- Calendar skeleton (built once) ----------
+
+    function buildCalendarSkeleton() {
+      const header = document.getElementById('calHeader');
+      header.innerHTML = '<div class="gutter"></div>' + [0,1,2,3,4,5,6].map(() => '<div class="day-head"></div>').join('');
+
+      const allDay = document.getElementById('allDayRow');
+      allDay.innerHTML = '<div class="gutter">All day</div>' + [0,1,2,3,4,5,6].map(() => '<div class="all-day-cell"></div>').join('');
+
+      const grid = document.getElementById('calGrid');
+      let gutterHtml = '<div class="time-gutter">';
+      for (let h = 0; h < 24; h++) {
+        const label = h === 0 ? '12 AM' : h < 12 ? h + ' AM' : h === 12 ? '12 PM' : (h - 12) + ' PM';
+        gutterHtml += '<div class="time-slot">' + label + '</div>';
+      }
+      gutterHtml += '</div>';
+
+      let daysHtml = '';
+      for (let d = 0; d < 7; d++) {
+        daysHtml += '<div class="day-col" data-day-index="' + d + '">';
+        for (let h = 0; h < 24; h++) {
+          daysHtml += '<div class="hour-cell" data-hour="' + h + '"></div>';
+        }
+        daysHtml += '</div>';
+      }
+      grid.innerHTML = gutterHtml + daysHtml;
+
+      // Scroll to ~7am by default
+      document.getElementById('calScroll').scrollTop = 7 * HOUR_HEIGHT;
+    }
+
+    // ---------- Calendar render ----------
+
+    function renderCalendar() {
+      const days = [];
+      for (let i = 0; i < 7; i++) { const d = new Date(currentWeekStart); d.setDate(d.getDate() + i); days.push(d); }
+      const today = new Date();
+      const dayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+      document.getElementById('weekLabel').textContent =
+        days[0].toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' – ' +
+        days[6].toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+
+      // Header labels
+      document.querySelectorAll('#calHeader .day-head').forEach((el, i) => {
+        el.classList.toggle('is-today', sameDay(days[i], today));
+        el.innerHTML = dayNames[i] + '<div class="day-num">' + days[i].getDate() + '</div>';
+      });
+
+      // All-day chips (dated tasks with no time, and deadline-only tasks)
+      document.querySelectorAll('#allDayRow .all-day-cell').forEach((cell, i) => {
+        cell.innerHTML = '';
+        const d = days[i];
+        const items = APP_DATA.tasks.filter(t => {
+          if (t.showDate && !t.showTime && sameDay(new Date(t.showDate + 'T00:00:00'), d)) return true;
+          if (!t.showDate && t.deadline && sameDay(new Date(t.deadline + 'T00:00:00'), d)) return true;
+          return false;
+        });
+        items.forEach(t => {
+          const chip = document.createElement('div');
+          chip.className = 'all-day-chip' + (t.status === 'Done' ? ' done' : '');
+          chip.style.background = projectColor(t.project);
+          chip.style.color = textColorFor(projectColor(t.project));
+          chip.textContent = (t.deadline && !t.showDate ? '⏰ ' : '') + t.name;
+          chip.addEventListener('click', () => openTaskModal(t));
+          cell.appendChild(chip);
+        });
+      });
+
+      // Reset day columns (remove old blocks, keep hour cells) + rebind click-to-create
+      document.querySelectorAll('.day-col').forEach((col, i) => {
+        col.classList.toggle('is-today', sameDay(days[i], today));
+        col.querySelectorAll('.time-block, .now-line').forEach(el => el.remove());
+        col.querySelectorAll('.hour-cell').forEach(cell => {
+          cell.onclick = () => openTaskModal(null, fmt(days[i]), String(cell.dataset.hour).padStart(2,'0') + ':00');
+        });
+      });
+
+      // Timed blocks
+      const dayCols = document.querySelectorAll('.day-col');
+      days.forEach((d, i) => {
+        const col = dayCols[i];
+        const items = APP_DATA.tasks.filter(t => t.showDate && t.showTime && sameDay(new Date(t.showDate + 'T00:00:00'), d));
+        items.forEach(t => {
+          const startMin = minutesFromTime(t.showTime);
+          const dur = Number(t.durationMinutes) || 60;
+          const top = (startMin / 60) * HOUR_HEIGHT;
+          const height = Math.max((dur / 60) * HOUR_HEIGHT, 20);
+          const block = document.createElement('div');
+          block.className = 'time-block' + (t.status === 'Done' ? ' done' : '');
+          block.style.top = top + 'px';
+          block.style.height = height + 'px';
+          block.style.background = projectColor(t.project);
+          block.style.color = textColorFor(projectColor(t.project));
+          block.innerHTML = '<div class="tb-name">' + escapeHtml(t.name) + '</div><div class="tb-time">' + t.showTime + '</div>';
+          block.addEventListener('click', e => { e.stopPropagation(); openTaskModal(t); });
+          col.appendChild(block);
+        });
+
+        if (sameDay(d, today)) {
+          const nowMin = today.getHours() * 60 + today.getMinutes();
+          const line = document.createElement('div');
+          line.className = 'now-line';
+          line.style.top = ((nowMin / 60) * HOUR_HEIGHT) + 'px';
+          col.appendChild(line);
+        }
+      });
+    }
+
+    // ---------- Sidebar (today + notes + recurring) ----------
+
+    function renderCheckableRow(t, listEl) {
+      const row = document.createElement('div');
+      row.className = 'note-row' + (t.status === 'Done' ? ' done' : '');
+      const cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.checked = t.status === 'Done';
+      cb.addEventListener('change', () => {
+        apiCall('toggleDone', [t.id]).then(loadData).catch(showError);
+      });
+      const label = document.createElement('span');
+      label.className = 'note-text';
+      label.textContent = t.showTime ? (t.showTime + ' · ' + t.name) : t.name;
+      label.addEventListener('click', () => openTaskModal(t));
+      row.appendChild(cb); row.appendChild(label);
+      listEl.appendChild(row);
+    }
+
+    function renderSidebar() {
+      const todayStr = fmt(new Date());
+      document.getElementById('todayBoxTitle').textContent =
+        'Today · ' + new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+
+      const todayList = document.getElementById('todayList');
+      todayList.innerHTML = '';
+      const todayTasks = APP_DATA.tasks
+        .filter(t => t.showDate === todayStr)
+        .sort((a, b) => {
+          if (!a.showTime && !b.showTime) return 0;
+          if (!a.showTime) return -1;
+          if (!b.showTime) return 1;
+          return a.showTime.localeCompare(b.showTime);
+        });
+      if (!todayTasks.length) {
+        todayList.innerHTML = '<p class="empty-hint">Nothing for today — add a quick note above.</p>';
+      } else {
+        todayTasks.forEach(t => renderCheckableRow(t, todayList));
+      }
+
+      const notesList = document.getElementById('notesList');
+      notesList.innerHTML = '';
+      const notes = APP_DATA.tasks.filter(t => !t.showDate && !t.deadline);
+      if (!notes.length) {
+        notesList.innerHTML = '<p class="empty-hint">Nothing undated.</p>';
+      } else {
+        notes.forEach(t => renderCheckableRow(t, notesList));
+      }
+
+      const recList = document.getElementById('recurringList');
+      recList.innerHTML = '';
+      if (!APP_DATA.templates.length) {
+        recList.innerHTML = '<p class="empty-hint">Check "Repeats" on a new task to set one up.</p>';
+      } else {
+        const freqLabel = { DAILY: 'Daily', WEEKLY: 'Weekly', MONTHLY: 'Monthly' };
+        APP_DATA.templates.forEach(t => {
+          const row = document.createElement('div');
+          row.className = 'rec-row';
+          const freq = t.recurrenceType === 'EVERY_N_DAYS' ? 'Every ' + t.recurrenceInterval + ' days' : (freqLabel[t.recurrenceType] || t.recurrenceType);
+          const info = document.createElement('div');
+          info.style.cursor = 'pointer';
+          info.innerHTML = '<span class="rec-name">' + escapeHtml(t.name) + '</span><span class="rec-meta">' + escapeHtml(t.project) + ' · ' + freq + '</span>';
+          info.addEventListener('click', () => openTaskModal(t));
+          row.appendChild(info);
+          const del = document.createElement('button');
+          del.className = 'btn btn-small btn-danger';
+          del.textContent = '×';
+          del.addEventListener('click', () => {
+            if (!confirm('Stop this recurring task? Past instances stay.')) return;
+            apiCall('deleteTemplate', [t.id]).then(loadData).catch(showError);
+          });
+          row.appendChild(del);
+          recList.appendChild(row);
+        });
+      }
+    }
+
+    function bindSidebar() {
+      const add = () => {
+        const input = document.getElementById('quickAddInput');
+        const name = input.value.trim();
+        if (!name) return;
+        apiCall('createTask', [{ name, project: (APP_DATA.projects[0] || {}).name || '', status: 'Not started', showDate: fmt(new Date()) }])
+          .then(() => { input.value = ''; loadData(); })
+          .catch(showError);
+      };
+      document.getElementById('quickAddBtn').addEventListener('click', add);
+      document.getElementById('quickAddInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); add(); } });
+    }
+
+    // ---------- Projects board ----------
+
+    function renderProjectsBoard() {
+      const board = document.getElementById('projectsBoard');
+      board.innerHTML = '';
+      APP_DATA.projects.forEach(p => {
+        const col = document.createElement('div');
+        col.className = 'project-column';
+        const tasks = APP_DATA.tasks.filter(t => t.project === p.name);
+        col.innerHTML = '<h3><span class="project-dot" style="background:' + p.color + '"></span>' + escapeHtml(p.name) + ' (' + tasks.length + ')</h3>';
+        tasks.forEach(t => {
+          const card = document.createElement('div');
+          card.className = 'task-card' + (t.status === 'Done' ? ' done' : '');
+          card.style.borderLeftColor = p.color;
+          const when = t.showDate ? t.showDate + (t.showTime ? ' ' + t.showTime : '') : (t.deadline ? 'due ' + t.deadline : '');
+          card.innerHTML = escapeHtml(t.name) + (when ? '<div class="tc-meta">' + when + '</div>' : '');
+          card.addEventListener('click', () => openTaskModal(t));
+          col.appendChild(card);
+        });
+        board.appendChild(col);
+      });
+    }
+
+    // ---------- Task modal ----------
+
+    function openTaskModal(t, prefillDate, prefillTime) {
+      const isTemplate = !!(t && t.isTemplate);
+      document.getElementById('taskIsTemplate').value = isTemplate ? '1' : '';
+      document.getElementById('taskModalTitle').textContent = isTemplate ? 'Edit recurring task' : (t ? 'Edit task' : 'New task');
+      document.getElementById('taskId').value = t ? t.id : '';
+      document.getElementById('taskName').value = t ? t.name : '';
+      document.getElementById('taskProject').value = t ? t.project : (APP_DATA.projects[0] || {}).name;
+      document.getElementById('taskShowDate').value = (t && !isTemplate) ? t.showDate : (prefillDate || '');
+      document.getElementById('taskShowTime').value = t ? t.showTime : (prefillTime || '');
+      document.getElementById('taskDuration').value = t && t.durationMinutes ? t.durationMinutes : 60;
+      document.getElementById('taskDeadline').value = (t && !isTemplate) ? t.deadline : '';
+      document.getElementById('taskStatus').value = (t && !isTemplate) ? t.status : 'Not started';
+      document.getElementById('taskSync').checked = t ? !!t.syncToCalendar : false;
+      document.getElementById('taskNotes').value = t ? (t.notes || '') : '';
+      document.getElementById('deleteTaskBtn').classList.toggle('hidden', !t);
+
+      // A recurring template has no fixed date/deadline/status of its own —
+      // only its generated instances do — so hide those fields when editing one.
+      document.getElementById('taskShowDateLabel').classList.toggle('hidden', isTemplate);
+      document.getElementById('taskDeadlineLabel').classList.toggle('hidden', isTemplate);
+      document.getElementById('taskStatusLabel').classList.toggle('hidden', isTemplate);
+
+      const repeatRow = document.getElementById('repeatToggleRow');
+      const repeatBox = document.getElementById('repeatBox');
+      if (isTemplate) {
+        // Editing an existing recurring task: show its frequency settings directly.
+        repeatRow.classList.add('hidden');
+        repeatBox.classList.remove('hidden');
+        document.getElementById('taskRepeats').checked = true;
+        document.getElementById('repeatType').value = t.recurrenceType || 'WEEKLY';
+        document.getElementById('repeatInterval').value = t.recurrenceInterval || 2;
+        document.getElementById('repeatIntervalLabel').classList.toggle('hidden', t.recurrenceType !== 'EVERY_N_DAYS');
+      } else if (!t) {
+        // Creating a brand-new task: offer the "Repeats" checkbox, unchecked by default.
+        repeatRow.classList.remove('hidden');
+        repeatBox.classList.add('hidden');
+        document.getElementById('taskRepeats').checked = false;
+        document.getElementById('repeatType').value = 'WEEKLY';
+        document.getElementById('repeatIntervalLabel').classList.add('hidden');
+      } else {
+        // Editing a plain (non-recurring) task: no repeat controls at all.
+        repeatRow.classList.add('hidden');
+        repeatBox.classList.add('hidden');
+      }
+
+      document.getElementById('taskModal').classList.remove('hidden');
+    }
+
+    function closeTaskModal() { document.getElementById('taskModal').classList.add('hidden'); }
+
+    function bindModals() {
+      document.getElementById('addTaskBtn').addEventListener('click', () => openTaskModal(null));
+      document.getElementById('cancelTaskBtn').addEventListener('click', closeTaskModal);
+
+      document.querySelectorAll('.clear-field-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const field = document.getElementById(btn.dataset.clear);
+          field.value = '';
+          // Safari can leave native date/time inputs in a stuck "partially
+          // filled" state after a programmatic clear, which silently blocks
+          // form submission until the field is blurred and re-validated —
+          // this is what caused Save to need repeated clicks.
+          field.dispatchEvent(new Event('input', { bubbles: true }));
+          field.dispatchEvent(new Event('change', { bubbles: true }));
+          field.blur();
+        });
+      });
+
+      document.getElementById('taskRepeats').addEventListener('change', e => {
+        document.getElementById('repeatBox').classList.toggle('hidden', !e.target.checked);
+      });
+      document.getElementById('repeatType').addEventListener('change', e => {
+        document.getElementById('repeatIntervalLabel').classList.toggle('hidden', e.target.value !== 'EVERY_N_DAYS');
+      });
+
+      document.getElementById('taskForm').addEventListener('submit', e => {
+        e.preventDefault();
+        if (!document.getElementById('taskName').value.trim()) {
+          alert('Please enter a name.');
+          return;
+        }
+        const id = document.getElementById('taskId').value;
+        const isTemplate = document.getElementById('taskIsTemplate').value === '1';
+        const showTime = document.getElementById('taskShowTime').value;
+        const done = () => { closeTaskModal(); loadData(); };
+
+        if (isTemplate) {
+          const updates = {
+            name: document.getElementById('taskName').value,
+            project: document.getElementById('taskProject').value,
+            showTime: showTime,
+            durationMinutes: showTime ? Number(document.getElementById('taskDuration').value) || 60 : '',
+            syncToCalendar: document.getElementById('taskSync').checked,
+            recurrenceType: document.getElementById('repeatType').value,
+            recurrenceInterval: document.getElementById('repeatInterval').value,
+            notes: document.getElementById('taskNotes').value
+          };
+          apiCall('updateRecurringTemplate', [id, updates]).then(done).catch(showError);
+          return;
+        }
+
+        const payload = {
+          name: document.getElementById('taskName').value,
+          project: document.getElementById('taskProject').value,
+          showDate: document.getElementById('taskShowDate').value,
+          showTime: showTime,
+          durationMinutes: showTime ? Number(document.getElementById('taskDuration').value) || 60 : '',
+          deadline: document.getElementById('taskDeadline').value,
+          status: document.getElementById('taskStatus').value,
+          syncToCalendar: document.getElementById('taskSync').checked,
+          notes: document.getElementById('taskNotes').value
+        };
+
+        if (!id && document.getElementById('taskRepeats').checked) {
+          payload.repeats = true;
+          payload.recurrenceType = document.getElementById('repeatType').value;
+          payload.recurrenceInterval = document.getElementById('repeatInterval').value;
+          payload.startDate = payload.showDate;
+        }
+
+        if (id) {
+          apiCall('updateTask', [id, payload]).then(done).catch(showError);
+        } else {
+          apiCall('createTask', [payload]).then(done).catch(showError);
+        }
+      });
+
+      document.getElementById('deleteTaskBtn').addEventListener('click', () => {
+        const id = document.getElementById('taskId').value;
+        if (!id || !confirm('Delete this task?')) return;
+        apiCall('deleteTask', [id]).then(() => { closeTaskModal(); loadData(); }).catch(showError);
+      });
+
+      document.getElementById('appleImportBtn').addEventListener('click', () => {
+        apiCall('getAppleCalendarUrl').then(savedUrl => {
+          const url = prompt(
+            'Paste your public Apple Calendar link (Calendar app → right-click a calendar → Share Calendar → Public Calendar → copy link):',
+            savedUrl || ''
+          );
+          if (!url) return;
+          apiCall('importFromAppleCalendar', [url])
+            .then(n => { alert('Imported ' + n + ' new event(s).'); loadData(); })
+            .catch(showError);
+        }).catch(showError);
+      });
+
+      document.getElementById('icsBtn').addEventListener('click', () => {
+        // The ICS feed is served by the Apps Script API, not this static
+        // page, so it's built off API_URL rather than window.location.
+        document.getElementById('icsUrl').value = API_URL + '?feed=ics';
+        document.getElementById('icsModal').classList.remove('hidden');
+      });
+      document.getElementById('closeIcsBtn').addEventListener('click', () => document.getElementById('icsModal').classList.add('hidden'));
+      document.getElementById('copyIcsBtn').addEventListener('click', () => {
+        const input = document.getElementById('icsUrl');
+        input.select();
+        document.execCommand('copy');
+      });
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str == null ? '' : str;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>
