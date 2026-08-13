@@ -384,6 +384,7 @@
     // ---------- Project helpers ----------
 
     function projectColor(name) {
+      if (!name) return '#C4742C'; // no-project events (Apple Calendar imports)
       const p = APP_DATA.projects.find(p => p.name === name);
       return p ? p.color : '#999999';
     }
