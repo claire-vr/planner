@@ -543,7 +543,7 @@
       const todayList = document.getElementById('todayList');
       todayList.innerHTML = '';
       const todayTasks = APP_DATA.tasks
-        .filter(t => t.showDate === todayStr)
+        .filter(t => t.showDate === todayStr && t.project) // exclude no-project calendar events (Apple imports)
         .sort((a, b) => {
           if (!a.showTime && !b.showTime) return 0;
           if (!a.showTime) return -1;
