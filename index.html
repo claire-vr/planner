@@ -383,10 +383,17 @@
 
     // ---------- Project helpers ----------
 
+    // Reserved row name in the Projects sheet — not a real project, just a
+    // color for calendar-only events (no project set, e.g. Apple imports).
+    // Add a row named exactly this to the Projects sheet to customize it;
+    // falls back to the hardcoded color below until that row exists.
+    const EVENTS_PROJECT_NAME = 'Apple Events';
+
     function projectColor(name) {
-      if (!name) return '#C4742C'; // no-project events (Apple Calendar imports)
-      const p = APP_DATA.projects.find(p => p.name === name);
-      return p ? p.color : '#999999';
+      const lookupName = name || EVENTS_PROJECT_NAME;
+      const p = APP_DATA.projects.find(p => p.name === lookupName);
+      if (p) return p.color;
+      return name ? '#999999' : '#C4742C';
     }
     function populateProjectSelects() {
       const sel = document.getElementById('taskProject');
@@ -605,6 +612,7 @@
       const board = document.getElementById('projectsBoard');
       board.innerHTML = '';
       APP_DATA.projects.forEach(p => {
+        if (p.name === EVENTS_PROJECT_NAME) return; // color-only entry, not a real project
         const col = document.createElement('div');
         col.className = 'project-column';
         const tasks = APP_DATA.tasks.filter(t => t.project === p.name);
