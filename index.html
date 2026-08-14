@@ -108,11 +108,15 @@
     .hour-cell { height: var(--hour-height); border-bottom: 1px solid #f1efeb; cursor: pointer; }
     .hour-cell:hover { background: #f7f6f3; }
     .day-col.is-today { background: #fbf8f4; }
+    .day-col.drag-over { background: #eaf2f0; }
+    .all-day-cell.drag-over { background: #eaf2f0; }
 
     .time-block {
       position: absolute; left: 2px; right: 2px; border-radius: 6px; padding: 3px 6px;
       color: #fff; font-size: 11px; overflow: hidden; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.15);
     }
+    .time-block[draggable="true"], .all-day-chip[draggable="true"] { cursor: grab; }
+    .time-block.dragging, .all-day-chip.dragging { opacity: .4; }
     .time-block .tb-name { font-weight: 600; }
     .time-block.done { opacity: .55; text-decoration: line-through; }
     .time-block .tb-time { font-size: 10px; opacity: .85; }
@@ -419,7 +423,7 @@
       header.innerHTML = '<div class="gutter"></div>' + [0,1,2,3,4,5,6].map(() => '<div class="day-head"></div>').join('');
 
       const allDay = document.getElementById('allDayRow');
-      allDay.innerHTML = '<div class="gutter">All day</div>' + [0,1,2,3,4,5,6].map(() => '<div class="all-day-cell"></div>').join('');
+      allDay.innerHTML = '<div class="gutter">All day</div>' + [0,1,2,3,4,5,6].map(d => '<div class="all-day-cell" data-day-index="' + d + '"></div>').join('');
 
       const grid = document.getElementById('calGrid');
       let gutterHtml = '<div class="time-gutter">';
@@ -441,6 +445,50 @@
 
       // Scroll to ~7am by default
       document.getElementById('calScroll').scrollTop = 7 * HOUR_HEIGHT;
+
+      bindDragTargets();
+    }
+
+    // ---------- Drag-and-drop rescheduling ----------
+    // Day columns and all-day cells are stable containers (only their
+    // children get rebuilt on each renderCalendar()), so these listeners
+    // are attached once here rather than re-bound on every render.
+    function bindDragTargets() {
+      document.querySelectorAll('.day-col').forEach(col => {
+        col.addEventListener('dragover', e => {
+          e.preventDefault();
+          col.classList.add('drag-over');
+        });
+        col.addEventListener('dragleave', () => col.classList.remove('drag-over'));
+        col.addEventListener('drop', e => {
+          e.preventDefault();
+          col.classList.remove('drag-over');
+          const taskId = e.dataTransfer.getData('text/plain');
+          if (!taskId) return;
+          const dayIndex = Number(col.dataset.dayIndex);
+          const d = new Date(currentWeekStart);
+          d.setDate(d.getDate() + dayIndex);
+          apiCall('updateTask', [taskId, { showDate: fmt(d) }]).then(loadData).catch(showError);
+        });
+      });
+
+      document.querySelectorAll('.all-day-cell').forEach(cell => {
+        cell.addEventListener('dragover', e => {
+          e.preventDefault();
+          cell.classList.add('drag-over');
+        });
+        cell.addEventListener('dragleave', () => cell.classList.remove('drag-over'));
+        cell.addEventListener('drop', e => {
+          e.preventDefault();
+          cell.classList.remove('drag-over');
+          const taskId = e.dataTransfer.getData('text/plain');
+          if (!taskId) return;
+          const dayIndex = Number(cell.dataset.dayIndex);
+          const d = new Date(currentWeekStart);
+          d.setDate(d.getDate() + dayIndex);
+          apiCall('updateTask', [taskId, { showDate: fmt(d) }]).then(loadData).catch(showError);
+        });
+      });
     }
 
     // ---------- Calendar render ----------
@@ -477,6 +525,18 @@
           chip.style.color = textColorFor(projectColor(t.project));
           chip.textContent = (t.deadline && !t.showDate ? '⏰ ' : '') + t.name;
           chip.addEventListener('click', () => openTaskModal(t));
+          // Only items with a real ShowDate can be dragged to another day —
+          // deadline-only chips would need a different field updated, so
+          // leave those click-to-edit only.
+          if (t.showDate) {
+            chip.draggable = true;
+            chip.addEventListener('dragstart', e => {
+              chip.classList.add('dragging');
+              e.dataTransfer.setData('text/plain', String(t.id));
+              e.dataTransfer.effectAllowed = 'move';
+            });
+            chip.addEventListener('dragend', () => chip.classList.remove('dragging'));
+          }
           cell.appendChild(chip);
         });
       });
@@ -508,6 +568,14 @@
           block.style.color = textColorFor(projectColor(t.project));
           block.innerHTML = '<div class="tb-name">' + escapeHtml(t.name) + '</div><div class="tb-time">' + t.showTime + '</div>';
           block.addEventListener('click', e => { e.stopPropagation(); openTaskModal(t); });
+          block.draggable = true;
+          block.addEventListener('dragstart', e => {
+            e.stopPropagation();
+            block.classList.add('dragging');
+            e.dataTransfer.setData('text/plain', String(t.id));
+            e.dataTransfer.effectAllowed = 'move';
+          });
+          block.addEventListener('dragend', () => block.classList.remove('dragging'));
           col.appendChild(block);
         });
 
