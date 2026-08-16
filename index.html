@@ -165,7 +165,6 @@
     .repeat-box { background: #f7f6f3; border-radius: 8px; padding: 10px 12px; margin: -4px 0 12px; }
     .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
     .hidden { display: none !important; }
-    #icsUrl { margin: 10px 0; }
   </style>
 </head>
 <body>
@@ -174,7 +173,6 @@
     <div class="topbar-actions">
       <button id="addTaskBtn" class="btn btn-primary">+ New task</button>
       <button id="appleImportBtn" class="btn">🍏 Import from Apple</button>
-      <button id="icsBtn" class="btn">🍎 Apple Calendar link</button>
     </div>
   </header>
 
@@ -276,28 +274,12 @@
             <input type="number" id="repeatInterval" min="1" value="2">
           </label>
         </div>
-        <label class="checkbox-row">
-          <input type="checkbox" id="taskSync"> Add to Apple Calendar feed
-        </label>
         <div class="modal-actions">
           <button type="button" id="deleteTaskBtn" class="btn btn-danger hidden">Delete</button>
           <button type="button" id="cancelTaskBtn" class="btn">Cancel</button>
           <button type="submit" class="btn btn-primary">Save</button>
         </div>
       </form>
-    </div>
-  </div>
-
-  <!-- ICS link modal -->
-  <div id="icsModal" class="modal-backdrop hidden">
-    <div class="modal">
-      <h2>🍎 Apple Calendar feed</h2>
-      <p>Subscribe to this link in Apple Calendar (File → New Calendar Subscription on Mac, or Settings → Calendar → Add Subscribed Calendar on iPhone). It updates live, every time you open it — no waiting for a refresh.</p>
-      <input type="text" id="icsUrl" readonly>
-      <div class="modal-actions">
-        <button type="button" id="copyIcsBtn" class="btn btn-primary">Copy link</button>
-        <button type="button" id="closeIcsBtn" class="btn">Close</button>
-      </div>
     </div>
   </div>
 
@@ -716,7 +698,6 @@
       document.getElementById('taskDuration').value = t && t.durationMinutes ? t.durationMinutes : 60;
       document.getElementById('taskDeadline').value = (t && !isTemplate) ? t.deadline : '';
       document.getElementById('taskStatus').value = (t && !isTemplate) ? t.status : 'Not started';
-      document.getElementById('taskSync').checked = t ? !!t.syncToCalendar : false;
       document.getElementById('taskNotes').value = t ? (t.notes || '') : '';
       document.getElementById('deleteTaskBtn').classList.toggle('hidden', !t);
 
@@ -796,7 +777,6 @@
             project: document.getElementById('taskProject').value,
             showTime: showTime,
             durationMinutes: showTime ? Number(document.getElementById('taskDuration').value) || 60 : '',
-            syncToCalendar: document.getElementById('taskSync').checked,
             recurrenceType: document.getElementById('repeatType').value,
             recurrenceInterval: document.getElementById('repeatInterval').value,
             notes: document.getElementById('taskNotes').value
@@ -813,7 +793,6 @@
           durationMinutes: showTime ? Number(document.getElementById('taskDuration').value) || 60 : '',
           deadline: document.getElementById('taskDeadline').value,
           status: document.getElementById('taskStatus').value,
-          syncToCalendar: document.getElementById('taskSync').checked,
           notes: document.getElementById('taskNotes').value
         };
 
@@ -848,19 +827,6 @@
             .then(n => { alert('Imported ' + n + ' new event(s).'); loadData(); })
             .catch(showError);
         }).catch(showError);
-      });
-
-      document.getElementById('icsBtn').addEventListener('click', () => {
-        // The ICS feed is served by the Apps Script API, not this static
-        // page, so it's built off API_URL rather than window.location.
-        document.getElementById('icsUrl').value = API_URL + '?feed=ics';
-        document.getElementById('icsModal').classList.remove('hidden');
-      });
-      document.getElementById('closeIcsBtn').addEventListener('click', () => document.getElementById('icsModal').classList.add('hidden'));
-      document.getElementById('copyIcsBtn').addEventListener('click', () => {
-        const input = document.getElementById('icsUrl');
-        input.select();
-        document.execCommand('copy');
       });
     }
 
