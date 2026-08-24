@@ -3,12 +3,19 @@
 <head>
   <meta charset="utf-8">
   <title>Planner</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
   <link rel="icon" type="image/png" href="favicon.png">
   <!-- Solid-background PNG for iOS home screen icons and macOS Safari's "Add to Dock" — those don't support the transparent SVG favicon above. -->
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <!-- iOS "Add to Home Screen" app behavior: launch without Safari's browser
+       chrome, use a dark status bar readable over the topbar color, and
+       match the OS theme-color chip (also picked up by other browsers). -->
   <meta name="apple-mobile-web-app-title" content="Planner">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#37514D">
+  <meta name="format-detection" content="telephone=no, date=no, address=no, email=no">
   <style>
     :root {
       --bg: #faf9f7;
@@ -20,16 +27,29 @@
       --hour-height: 48px;
     }
     * { box-sizing: border-box; }
+    html { background: var(--bg); height: 100%; }
     body {
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
       background: var(--bg);
       color: var(--text);
+      /* Standalone home-screen launch has no Safari chrome, so the page can
+         draw under the notch/home indicator — pad it back out. No-ops in a
+         normal browser tab (env() resolves to 0 there). */
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+      padding-bottom: env(safe-area-inset-bottom);
+      /* Native-app feel: no gray tap flash, no double-tap-to-zoom delay,
+         no rubber-band scroll escaping to the whole page. */
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      overscroll-behavior-y: contain;
     }
 
     .topbar {
       display: flex; align-items: center; justify-content: space-between;
       padding: 14px 24px; border-bottom: 1px solid var(--border); background: var(--card-bg);
+      padding-top: calc(14px + env(safe-area-inset-top));
     }
     .topbar h1 { font-size: 19px; margin: 0; }
     .topbar-actions { display: flex; gap: 8px; }
@@ -100,7 +120,7 @@
     }
     .all-day-chip.done { text-decoration: line-through; opacity: .6; }
 
-    .cal-scroll { max-height: 480px; overflow-y: auto; position: relative; }
+    .cal-scroll { max-height: 480px; overflow-y: auto; position: relative; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
     .cal-grid { display: grid; grid-template-columns: 52px repeat(7, 1fr); }
     .time-gutter { display: flex; flex-direction: column; }
     .time-slot { height: var(--hour-height); font-size: 10px; color: var(--text-muted); text-align: right; padding-right: 6px; transform: translateY(-6px); }
@@ -165,6 +185,37 @@
     .repeat-box { background: #f7f6f3; border-radius: 8px; padding: 10px 12px; margin: -4px 0 12px; }
     .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
     .hidden { display: none !important; }
+
+    .cal-body-wrap { overflow-x: visible; }
+
+    /* ---------- Phone layout ---------- */
+    /* Below this width (covers all iPhones in portrait), stack the sidebar
+       above the calendar instead of squeezing both into a shared row, widen
+       tap targets, and let the 7-day grid scroll horizontally at a readable
+       column width rather than shrinking to illegible slivers. */
+    @media (max-width: 700px) {
+      main { padding: 12px 12px 40px; }
+      .topbar { padding: 12px 14px; padding-top: calc(12px + env(safe-area-inset-top)); flex-wrap: wrap; gap: 8px; }
+      .topbar h1 { font-size: 17px; }
+      .topbar-actions { flex-wrap: wrap; gap: 6px; }
+      .btn { padding: 9px 12px; font-size: 13px; }
+
+      .dashboard-top { flex-direction: column; }
+      .sidebar { width: 100%; }
+
+      .cal-body-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .cal-header, .all-day-row, .cal-grid {
+        grid-template-columns: 40px repeat(7, 64px);
+        width: max-content;
+        min-width: 100%;
+      }
+      .cal-scroll { max-height: 60vh; }
+      .hour-cell { cursor: pointer; }
+
+      .modal { padding: 18px; width: 92vw; }
+      .three-col { grid-template-columns: 1fr 1fr; }
+      .three-col label:last-child { grid-column: 1 / -1; }
+    }
   </style>
 </head>
 <body>
@@ -204,10 +255,12 @@
           <button id="thisWeek" class="btn btn-small">Today</button>
           <button id="nextWeek" class="btn btn-small">→</button>
         </div>
-        <div class="cal-header" id="calHeader"></div>
-        <div class="all-day-row" id="allDayRow"></div>
-        <div class="cal-scroll" id="calScroll">
-          <div class="cal-grid" id="calGrid"></div>
+        <div class="cal-body-wrap" id="calBodyWrap">
+          <div class="cal-header" id="calHeader"></div>
+          <div class="all-day-row" id="allDayRow"></div>
+          <div class="cal-scroll" id="calScroll">
+            <div class="cal-grid" id="calGrid"></div>
+          </div>
         </div>
       </section>
     </div>
