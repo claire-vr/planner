@@ -139,7 +139,6 @@
     .time-block.dragging, .all-day-chip.dragging { opacity: .4; }
     .time-block .tb-name { font-weight: 600; }
     .time-block.done { opacity: .55; text-decoration: line-through; }
-    .time-block .tb-time { font-size: 10px; opacity: .85; }
 
     .now-line { position: absolute; left: 0; right: 0; height: 2px; background: #e74c3c; z-index: 5; }
     .now-line::before {
@@ -601,7 +600,7 @@
           block.style.height = height + 'px';
           block.style.background = projectColor(t.project);
           block.style.color = textColorFor(projectColor(t.project));
-          block.innerHTML = '<div class="tb-name">' + escapeHtml(t.name) + '</div><div class="tb-time">' + t.showTime + '</div>';
+          block.innerHTML = '<div class="tb-name">' + escapeHtml(t.name) + '</div>';
           block.addEventListener('click', e => { e.stopPropagation(); openTaskModal(t); });
           block.draggable = true;
           block.addEventListener('dragstart', e => {
