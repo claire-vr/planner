@@ -586,8 +586,24 @@
           if (!taskId) return;
           const col = cell.closest('.day-col');
           const dayIndex = Number(col.dataset.dayIndex);
-          const hour = Number(cell.dataset.hour);
-          const minute = Math.min(45, Math.max(0, Math.floor((e.offsetY / HOUR_HEIGHT) * 4) * 15));
+          let hour = Number(cell.dataset.hour);
+          // Snap with priority: nearest hour first (widest magnetic band),
+          // then nearest half hour, and only fall back to nearest 15 minutes
+          // when the drop is genuinely in between.
+          const minuteRaw = Math.min(59.999, Math.max(0, (e.offsetY / HOUR_HEIGHT) * 60));
+          let minute;
+          if (minuteRaw < 10) {
+            minute = 0;
+          } else if (minuteRaw > 50) {
+            hour += 1;
+            minute = 0;
+          } else if (minuteRaw >= 22.5 && minuteRaw <= 37.5) {
+            minute = 30;
+          } else {
+            minute = Math.round(minuteRaw / 15) * 15;
+            if (minute === 60) { hour += 1; minute = 0; }
+          }
+          if (hour > 23) { hour = 23; minute = 45; }
           const d = new Date(currentWeekStart);
           d.setDate(d.getDate() + dayIndex);
           const showTime = String(hour).padStart(2, '0') + ':' + String(minute).padStart(2, '0');
