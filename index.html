@@ -8,7 +8,7 @@
   <!-- Solid-background PNG for iOS home screen icons and macOS Safari's "Add to Dock" — those don't support the transparent SVG favicon above. -->
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <!-- iOS "Add to Home Screen" app behavior: launch without Safari's browser
-       chrome, use a dark status bar readable over the topbar color, and
+       chrome, use a dark status bar readable over the header color, and
        match the OS theme-color chip (also picked up by other browsers). -->
   <meta name="apple-mobile-web-app-title" content="Planner">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -16,21 +16,28 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#37514D">
   <meta name="format-detection" content="telephone=no, date=no, address=no, email=no">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Newsreader:ital,wght@0,400;0,500;0,600;1,400;1,500&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #faf9f7;
       --card-bg: #ffffff;
       --border: #e5e2dd;
-      --text: #2b2924;
+      --text: #201f1b;
       --text-muted: #8a8578;
       --accent: #37514D;
+      --accent-warm: #BE845E;
       --hour-height: 48px;
+      --font-display: 'Bricolage Grotesque', -apple-system, sans-serif;
+      --font-body: 'Newsreader', Georgia, serif;
+      --font-mono: 'IBM Plex Mono', 'SFMono-Regular', Menlo, monospace;
     }
     * { box-sizing: border-box; }
     html { background: var(--bg); height: 100%; }
     body {
       margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      font-family: var(--font-body);
       background: var(--bg);
       color: var(--text);
       /* Standalone home-screen launch has no Safari chrome, so the page can
@@ -46,25 +53,41 @@
       overscroll-behavior-y: contain;
     }
 
-    .topbar {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 14px 24px; border-bottom: 1px solid var(--border); background: var(--card-bg);
+    /* ---------- App bar + hero ---------- */
+    .app-bar {
+      display: flex; justify-content: flex-end; align-items: center; gap: 8px;
+      padding: 14px 24px 0; background: var(--card-bg);
       padding-top: calc(14px + env(safe-area-inset-top));
     }
-    .topbar h1 { font-size: 19px; margin: 0; }
-    .topbar-actions { display: flex; gap: 8px; }
+    .hero {
+      background: var(--card-bg); border-bottom: 1px solid var(--border);
+      padding: 10px 24px 22px;
+    }
+    .hero-eyebrow {
+      display: flex; flex-wrap: wrap; font-family: var(--font-mono); font-size: 11px;
+      letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 14px;
+    }
+    .hero-eyebrow span { padding: 0 14px; border-left: 1px solid var(--border); }
+    .hero-eyebrow span:first-child { padding-left: 0; border-left: none; }
+    .hero-title {
+      font-family: var(--font-display); font-weight: 700; font-size: 38px;
+      letter-spacing: -0.02em; margin: 0 0 14px; line-height: 1; color: var(--text);
+    }
+    .hero-rule { height: 3px; width: 56px; background: var(--accent); margin-bottom: 14px; }
+    .hero-subtitle { font-family: var(--font-body); font-style: italic; font-size: 16px; color: #4a473f; margin: 0; max-width: 640px; }
 
     .btn {
-      border: 1px solid var(--border); background: var(--card-bg); border-radius: 8px;
-      padding: 7px 13px; font-size: 13px; cursor: pointer; color: var(--text);
+      font-family: var(--font-mono); text-transform: uppercase; letter-spacing: .04em;
+      border: 1px solid var(--border); background: var(--card-bg); border-radius: 7px;
+      padding: 7px 13px; font-size: 11px; cursor: pointer; color: var(--text);
     }
     .btn:hover { background: #f2f0ec; }
     .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
     .btn-primary:hover { opacity: 0.9; }
     .btn-danger { color: #c0392b; border-color: #f0c4bd; }
-    .btn-small { padding: 3px 8px; font-size: 11px; border-radius: 6px; }
+    .btn-small { padding: 3px 8px; font-size: 10px; border-radius: 6px; }
 
-    main { padding: 18px 24px 60px; }
+    main { padding: 22px 24px 60px; }
 
     .dashboard-top {
       display: flex;
@@ -74,47 +97,63 @@
     }
 
     /* ---------- Sidebar ---------- */
-    .sidebar { width: 260px; flex-shrink: 0; display: flex; flex-direction: column; gap: 14px; }
+    .sidebar { width: 270px; flex-shrink: 0; display: flex; flex-direction: column; gap: 14px; }
     .side-box {
-      background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px;
+      background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 16px;
     }
-    .side-box h3 { margin: 0 0 10px; font-size: 13px; text-transform: uppercase; letter-spacing: .03em; color: var(--text-muted); }
+    .eyebrow-num {
+      display: block; font-family: var(--font-mono); font-size: 10px; letter-spacing: .1em;
+      text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px;
+    }
+    .side-box h3 {
+      font-family: var(--font-display); font-weight: 700; margin: 0 0 12px;
+      font-size: 16px; letter-spacing: -0.01em; color: var(--text);
+    }
     .quick-add { display: flex; gap: 6px; margin-bottom: 10px; }
     .quick-add input {
-      flex: 1; padding: 7px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px;
+      flex: 1; padding: 7px 8px; border: 1px solid var(--border); border-radius: 6px;
+      font-size: 13px; font-family: var(--font-body);
     }
-    .note-row { display: flex; align-items: flex-start; gap: 7px; padding: 5px 0; font-size: 13px; }
+    .note-row { display: flex; align-items: flex-start; gap: 7px; padding: 6px 0; font-size: 13px; }
     .note-row input[type="checkbox"] { margin-top: 3px; }
     .note-row .note-text { flex: 1; cursor: pointer; }
     .note-row.done .note-text { text-decoration: line-through; color: var(--text-muted); }
-    .empty-hint { font-size: 12px; color: var(--text-muted); }
+    .note-name { font-family: var(--font-display); font-weight: 700; }
+    .note-time { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin-right: 3px; }
+    .empty-hint { font-size: 13px; font-family: var(--font-body); font-style: italic; color: var(--text-muted); }
 
     .rec-row {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 6px 0; font-size: 12px; border-top: 1px solid var(--border);
+      padding: 7px 0; font-size: 12px; border-top: 1px solid var(--border);
     }
     .rec-row:first-of-type { border-top: none; }
-    .rec-row .rec-name { font-weight: 600; }
-    .rec-row .rec-meta { color: var(--text-muted); display: block; font-size: 11px; }
+    .rec-row .rec-name { font-family: var(--font-display); font-weight: 700; font-size: 13px; }
+    .rec-row .rec-meta {
+      color: var(--text-muted); display: block; font-size: 10px; font-family: var(--font-mono);
+      text-transform: uppercase; letter-spacing: .04em; margin-top: 2px;
+    }
 
     /* ---------- Calendar ---------- */
     .calendar-area { flex: 1; min-width: 0; background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
     .week-nav {
-      display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px; padding: 14px; border-bottom: 1px solid var(--border);
     }
-    .week-label { font-weight: 600; font-size: 15px; }
+    .week-label { font-family: var(--font-display); font-weight: 700; font-size: 16px; letter-spacing: -0.01em; }
 
     .cal-header { display: grid; grid-template-columns: 52px repeat(7, 1fr); border-bottom: 1px solid var(--border); }
     .cal-header .gutter { }
-    .cal-header .day-head { text-align: center; padding: 6px 2px; font-size: 12px; color: var(--text-muted); border-left: 1px solid var(--border); }
-    .cal-header .day-head .day-num { font-size: 15px; font-weight: 700; color: var(--text); }
+    .cal-header .day-head {
+      text-align: center; padding: 8px 2px; font-family: var(--font-mono); font-size: 10px;
+      letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted); border-left: 1px solid var(--border);
+    }
+    .cal-header .day-head .day-num { font-family: var(--font-mono); font-size: 15px; font-weight: 600; color: var(--text); margin-top: 2px; }
     .cal-header .day-head.is-today .day-num { color: var(--accent); }
 
     .all-day-row { display: grid; grid-template-columns: 52px repeat(7, 1fr); border-bottom: 1px solid var(--border); min-height: 28px; }
-    .all-day-row .gutter { font-size: 10px; color: var(--text-muted); text-align: right; padding: 4px 6px 0 0; }
+    .all-day-row .gutter { font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); text-align: right; padding: 4px 6px 0 0; }
     .all-day-cell { border-left: 1px solid var(--border); padding: 3px; display: flex; flex-direction: column; gap: 2px; overflow: hidden; min-width: 0; }
     .all-day-chip {
-      font-size: 10px; padding: 2px 5px; border-radius: 5px; color: #fff; cursor: pointer;
+      font-family: var(--font-display); font-weight: 700; font-size: 10px; padding: 2px 5px; border-radius: 5px; color: #fff; cursor: pointer;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
       min-width: 0; max-width: 100%; box-sizing: border-box;
     }
@@ -123,7 +162,7 @@
     .cal-scroll { max-height: 480px; overflow-y: auto; position: relative; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
     .cal-grid { display: grid; grid-template-columns: 52px repeat(7, 1fr); }
     .time-gutter { display: flex; flex-direction: column; }
-    .time-slot { height: var(--hour-height); font-size: 10px; color: var(--text-muted); text-align: right; padding-right: 6px; transform: translateY(-6px); }
+    .time-slot { height: var(--hour-height); font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); text-align: right; padding-right: 6px; transform: translateY(-6px); }
     .day-col { position: relative; border-left: 1px solid var(--border); }
     .hour-cell { height: var(--hour-height); border-bottom: 1px solid #f1efeb; cursor: pointer; }
     .hour-cell:hover { background: #f7f6f3; }
@@ -137,7 +176,7 @@
     }
     .time-block[draggable="true"], .all-day-chip[draggable="true"] { cursor: grab; }
     .time-block.dragging, .all-day-chip.dragging { opacity: .4; }
-    .time-block .tb-name { font-weight: 600; }
+    .time-block .tb-name { font-family: var(--font-display); font-weight: 700; }
     .time-block.done { opacity: .55; text-decoration: line-through; }
 
     .now-line { position: absolute; left: 0; right: 0; height: 2px; background: #e74c3c; z-index: 5; }
@@ -146,28 +185,42 @@
     }
 
     /* ---------- Projects section ---------- */
-    .section-title { font-size: 15px; font-weight: 700; margin: 0 0 14px; }
+    .section-title {
+      font-family: var(--font-display); font-size: 24px; font-weight: 700;
+      letter-spacing: -0.01em; margin: 0 0 16px; color: var(--text);
+    }
     .projects-board { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
-    .project-column { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
-    .project-column h3 { margin: 0 0 10px; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+    .project-column { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+    .project-column h3 {
+      font-family: var(--font-display); font-weight: 700; margin: 0 0 10px; font-size: 15px;
+      display: flex; align-items: center; gap: 8px; letter-spacing: -0.01em;
+    }
     .project-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
     .task-card {
-      background: #fff; border-left: 4px solid #999; border-radius: 6px; padding: 7px 9px; margin-bottom: 7px;
+      background: #fff; border-left: 4px solid #999; border-radius: 6px; padding: 8px 10px; margin-bottom: 7px;
       box-shadow: 0 1px 2px rgba(0,0,0,0.06); cursor: pointer; font-size: 13px;
+      font-family: var(--font-display); font-weight: 700;
     }
     .task-card.done { text-decoration: line-through; color: var(--text-muted); }
-    .task-card .tc-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .task-card .tc-meta {
+      font-family: var(--font-mono); font-weight: 400; font-size: 10px; text-transform: uppercase;
+      letter-spacing: .04em; color: var(--text-muted); margin-top: 3px;
+    }
 
     /* ---------- Modals ---------- */
     .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; z-index: 50; }
     .modal-backdrop.hidden { display: none; }
-    .modal { background: #fff; border-radius: 12px; padding: 20px 24px; width: 400px; max-width: 90vw; max-height: 88vh; overflow-y: auto; }
-    .modal h2 { margin-top: 0; font-size: 16px; }
-    .modal label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }
-    .modal input, .modal select, .modal textarea {
-      display: block; width: 100%; margin-top: 4px; padding: 8px; border: 1px solid var(--border);
-      border-radius: 6px; font-size: 13px; color: var(--text); font-family: inherit;
+    .modal { background: #fff; border-radius: 12px; padding: 22px 26px; width: 400px; max-width: 90vw; max-height: 88vh; overflow-y: auto; }
+    .modal h2 { font-family: var(--font-display); font-weight: 700; margin-top: 0; font-size: 20px; letter-spacing: -0.01em; }
+    .modal label {
+      display: block; font-family: var(--font-mono); font-size: 10px; text-transform: uppercase;
+      letter-spacing: .06em; color: var(--text-muted); margin-bottom: 12px;
     }
+    .modal input, .modal select, .modal textarea {
+      display: block; width: 100%; margin-top: 5px; padding: 8px; border: 1px solid var(--border);
+      border-radius: 6px; font-size: 14px; color: var(--text); font-family: var(--font-body);
+    }
+    .modal input[type="date"], .modal input[type="time"], .modal input[type="number"] { font-family: var(--font-mono); font-size: 13px; }
     .modal textarea { resize: vertical; }
     .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
     .field-with-clear { display: flex; align-items: center; gap: 4px; margin-top: 4px; }
@@ -194,10 +247,12 @@
        column width rather than shrinking to illegible slivers. */
     @media (max-width: 700px) {
       main { padding: 12px 12px 40px; }
-      .topbar { padding: 12px 14px; padding-top: calc(12px + env(safe-area-inset-top)); flex-wrap: wrap; gap: 8px; }
-      .topbar h1 { font-size: 17px; }
-      .topbar-actions { flex-wrap: wrap; gap: 6px; }
-      .btn { padding: 9px 12px; font-size: 13px; }
+      .app-bar { padding: 12px 14px 0; padding-top: calc(12px + env(safe-area-inset-top)); flex-wrap: wrap; gap: 6px; }
+      .hero { padding: 10px 14px 18px; }
+      .hero-title { font-size: 28px; }
+      .hero-eyebrow { gap: 4px 0; }
+      .hero-eyebrow span { padding: 0 10px; }
+      .btn { padding: 9px 12px; font-size: 11px; }
 
       .dashboard-top { flex-direction: column; }
       .sidebar { width: 100%; }
@@ -218,18 +273,22 @@
   </style>
 </head>
 <body>
-  <header class="topbar">
-    <h1>📋 Planner</h1>
-    <div class="topbar-actions">
-      <button id="addTaskBtn" class="btn btn-primary">+ New task</button>
-      <button id="appleImportBtn" class="btn">🍏 Import from Apple</button>
-    </div>
+  <div class="app-bar">
+    <button id="appleImportBtn" class="btn">Import from Apple</button>
+    <button id="addTaskBtn" class="btn btn-primary">+ New task</button>
+  </div>
+  <header class="hero">
+    <div class="hero-eyebrow" id="heroEyebrow"></div>
+    <h1 class="hero-title">Planner</h1>
+    <div class="hero-rule"></div>
+    <p class="hero-subtitle" id="heroSubtitle">Everything on your plate, one week at a time.</p>
   </header>
 
   <main>
     <div class="dashboard-top">
       <aside class="sidebar">
         <div class="side-box">
+          <span class="eyebrow-num">01 / Daily list</span>
           <h3 id="todayBoxTitle">Today</h3>
           <div class="quick-add">
             <input type="text" id="quickAddInput" placeholder="Quick note or to-do…">
@@ -238,10 +297,12 @@
           <div id="todayList"></div>
         </div>
         <div class="side-box">
-          <h3>Notes (no date)</h3>
+          <span class="eyebrow-num">02 / Undated</span>
+          <h3>Notes</h3>
           <div id="notesList"></div>
         </div>
         <div class="side-box">
+          <span class="eyebrow-num">03 / Repeating</span>
           <h3>Recurring</h3>
           <div id="recurringList"></div>
         </div>
@@ -264,7 +325,8 @@
       </section>
     </div>
 
-    <h2 class="section-title">📁 Projects</h2>
+    <span class="eyebrow-num">04 / By project</span>
+    <h2 class="section-title">Projects</h2>
     <div id="projectsBoard" class="projects-board"></div>
   </main>
 
@@ -351,6 +413,7 @@
       bindNav();
       bindModals();
       bindSidebar();
+      updateHero();
       loadData();
     });
 
@@ -382,6 +445,24 @@
       renderCalendar();
       renderSidebar();
       renderProjectsBoard();
+      updateHero();
+    }
+
+    // ---------- Hero header ----------
+
+    function updateHero() {
+      const eyebrow = document.getElementById('heroEyebrow');
+      if (!eyebrow) return;
+      const todayStr = fmt(new Date());
+      const todayCount = APP_DATA.tasks.filter(t => t.showDate === todayStr && t.project).length;
+      const projectCount = APP_DATA.projects.filter(p => p.name !== EVENTS_PROJECT_NAME).length;
+      const dateLabel = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+      const parts = [
+        dateLabel,
+        todayCount + (todayCount === 1 ? ' task today' : ' tasks today'),
+        projectCount + (projectCount === 1 ? ' project' : ' projects')
+      ];
+      eyebrow.innerHTML = parts.map(p => '<span>' + escapeHtml(p) + '</span>').join('');
     }
 
     function showError(err) {
@@ -639,7 +720,16 @@
       });
       const label = document.createElement('span');
       label.className = 'note-text';
-      label.textContent = t.showTime ? (t.showTime + ' · ' + t.name) : t.name;
+      if (t.showTime) {
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'note-time';
+        timeSpan.textContent = t.showTime;
+        label.appendChild(timeSpan);
+      }
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'note-name';
+      nameSpan.textContent = t.name;
+      label.appendChild(nameSpan);
       label.addEventListener('click', () => openTaskModal(t));
       row.appendChild(cb); row.appendChild(label);
       listEl.appendChild(row);
